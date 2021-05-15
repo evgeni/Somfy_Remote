@@ -1,3 +1,5 @@
+# This project is no longer supported and will receive no further updates. Thank you for using and supporting it!
+
 # Somfy Remote
 
 This is a library to emulate one or multiple Somfy remote controls via a CC1101 module by Texas Instruments.
