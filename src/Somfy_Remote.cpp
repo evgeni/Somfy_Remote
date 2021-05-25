@@ -26,6 +26,24 @@ SomfyRemote::SomfyRemote(String name, uint32_t remoteCode)
   _name = name;
   _remoteCode = remoteCode;
   _eepromAddress = getNextEepromAddress();
+
+  // Set pins according to module
+#if defined __AVR_ATmega168__ || defined __AVR_ATmega328__ || defined __AVR_ATmega2560__
+    gdo0Pin = 2;
+    gdo2Pin = 3;
+#elif ESP32 || ESP8266
+    gdo0Pin = 2;
+    gdo2Pin = 4;
+#endif
+
+    ELECHOUSE_cc1101.setGDO(gdo0Pin, gdo2Pin);
+
+    // Initialize radio chip
+    ELECHOUSE_cc1101.Init();
+    // Configure transmission at 433.42 MHz
+    ELECHOUSE_cc1101.setMHZ(433.42);
+    // Put radio in idle
+    ELECHOUSE_cc1101.setSidle();
 }
 
 // Getter for name
@@ -91,12 +109,14 @@ void SomfyRemote::move(String command)
     break;
   }
 
+  ELECHOUSE_cc1101.SetTx();
   // Send the frame according to Somfy RTS protocol
   sendCommand(frame, 2);
   for (int i = 0; i < 2; i = i + 1)
   {
     sendCommand(frame, 7);
   }
+  ELECHOUSE_cc1101.setSidle();
 
   EEPROM.commit();
 }
@@ -141,23 +161,6 @@ void SomfyRemote::sendCommand(uint8_t *frame, uint8_t sync)
 {
   if (sync == 2)
   { // Only with the first frame.
-
-// Set pins according to module
-#if defined __AVR_ATmega168__ || defined __AVR_ATmega328__ || defined __AVR_ATmega2560__
-    gdo0Pin = 2;
-    gdo2Pin = 3;
-#elif ESP32 || ESP8266
-    gdo0Pin = 2;
-    gdo2Pin = 4;
-#endif
-
-    ELECHOUSE_cc1101.setGDO(gdo0Pin, gdo2Pin);
-
-    // Initialize radio chip
-    ELECHOUSE_cc1101.Init();
-
-    // Enable transmission at 433.42 MHz
-    ELECHOUSE_cc1101.SetTx(433.42);
 
     // Wake-up pulse & Silence
     digitalWrite(gdo2Pin, HIGH); // High
